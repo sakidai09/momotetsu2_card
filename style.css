@@ -287,14 +287,26 @@ input[type='search'] {
   padding: 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .category-title {
-  margin: 0;
-  font-size: 1.1rem;
+  margin: 4px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
   font-weight: 700;
-  color: var(--accent);
+  color: var(--text-color);
+}
+
+.category-title .category-icon {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.category-title .category-name {
+  font-weight: 700;
 }
 
 .category-card-list {

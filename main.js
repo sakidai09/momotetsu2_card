@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const CATEGORY_DEFINITIONS = [
     {
       name: '急行系',
+      icon: '✈️',
       cards: [
         '229マスカード',
         'リニア周遊カード',
@@ -21,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: '移動系',
+      icon: '🚋',
       cards: [
         '強奪飛び周遊カード',
         '☆飛び周遊カード',
@@ -45,6 +47,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: 'お金系',
+      icon: '💰',
       cards: [
         '坊主丸儲けカード',
         'ダイヤモンドカード',
@@ -62,6 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: '物件系',
+      icon: '🏢',
       cards: [
         'シンデレラカード',
         '強奪飛び周遊カード',
@@ -77,6 +81,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: '便利系',
+      icon: '🧰',
       cards: [
         'ダビングカード',
         'パトカーズ',
@@ -96,6 +101,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     {
       name: '攻撃系',
+      icon: '⚔️',
       cards: [
         '坊主丸儲けカード',
         '刀狩りカード',
@@ -385,7 +391,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const title = document.createElement('h3');
       title.className = 'category-title';
-      title.textContent = `[${category.name}]`;
+
+      if (category.icon) {
+        const icon = document.createElement('span');
+        icon.className = 'category-icon';
+        icon.textContent = category.icon;
+        title.appendChild(icon);
+      }
+
+      const label = document.createElement('span');
+      label.className = 'category-name';
+      label.textContent = category.name;
+      title.appendChild(label);
+
       group.appendChild(title);
 
       const list = document.createElement('div');
