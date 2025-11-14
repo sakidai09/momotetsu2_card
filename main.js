@@ -6,7 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
   let stationData = [];
   let cardNames = [];
 
-  const normalise = (text) => (text ?? '').toLowerCase();
+  const normalise = (text) => {
+    const value = (text ?? '').toString().trim();
+    const normalised = typeof value.normalize === 'function' ? value.normalize('NFKC') : value;
+    return normalised.toLowerCase();
+  };
 
   const getPeriodSortValue = (periodName) => {
     if (!periodName) {
@@ -68,64 +72,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fragment = document.createDocumentFragment();
 
-    stations.forEach((station, stationIndex) => {
-      const cardWrapper = document.createElement('article');
-      cardWrapper.className = 'station-card';
-
+    stations.forEach((station) => {
       const hasPeriodBlocks = Array.isArray(station.periods) && station.periods.length > 0;
 
       if (hasPeriodBlocks) {
-        station.periods.forEach((period, periodIndex) => {
+        station.periods.forEach((period) => {
           const periodBlock = document.createElement('div');
           periodBlock.className = getPeriodClassName(period.name, period);
 
-          const toggleButton = document.createElement('button');
-          toggleButton.type = 'button';
-          toggleButton.className = 'period-toggle';
-          toggleButton.textContent = `${station.station} (${period.name})`;
+          const header = document.createElement('p');
+          header.className = 'period-header';
+          header.textContent = `${station.station} (${period.name})`;
+          periodBlock.appendChild(header);
 
-          const contentId = `period-${stationIndex}-${periodIndex}`;
-          toggleButton.setAttribute('aria-controls', contentId);
-
-          const contentList = document.createElement('ul');
-          contentList.className = 'period-content';
-          contentList.id = contentId;
+          const cardList = document.createElement('ul');
+          cardList.className = 'period-card-list';
 
           period.cards.forEach((card) => {
             const item = document.createElement('li');
             item.textContent = card;
-            contentList.appendChild(item);
+            cardList.appendChild(item);
           });
 
-          const shouldOpen = periodIndex === 0;
-          if (shouldOpen) {
-            periodBlock.classList.add('open');
-            toggleButton.setAttribute('aria-expanded', 'true');
-          } else {
-            toggleButton.setAttribute('aria-expanded', 'false');
-          }
-
-          toggleButton.addEventListener('click', () => {
-            const isOpen = periodBlock.classList.toggle('open');
-            toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-          });
-
-          periodBlock.appendChild(toggleButton);
-          periodBlock.appendChild(contentList);
-          cardWrapper.appendChild(periodBlock);
+          periodBlock.appendChild(cardList);
+          fragment.appendChild(periodBlock);
         });
+
+        return;
       }
 
       const fallbackCards = Array.isArray(station.cards) ? station.cards : [];
 
-      if (!hasPeriodBlocks && fallbackCards.length) {
-        const stationTitle = document.createElement('h3');
-        stationTitle.className = 'station-name';
-        stationTitle.textContent = station.station;
-        cardWrapper.appendChild(stationTitle);
+      if (fallbackCards.length) {
+        const fallbackBlock = document.createElement('div');
+        fallbackBlock.className = 'period-block period_default';
+
+        const header = document.createElement('p');
+        header.className = 'period-header';
+        header.textContent = station.station;
+        fallbackBlock.appendChild(header);
 
         const cardList = document.createElement('ul');
-        cardList.className = 'card-list';
+        cardList.className = 'period-card-list';
 
         fallbackCards.forEach((card) => {
           const item = document.createElement('li');
@@ -133,11 +121,8 @@ document.addEventListener('DOMContentLoaded', () => {
           cardList.appendChild(item);
         });
 
-        cardWrapper.appendChild(cardList);
-      }
-
-      if (hasPeriodBlocks || fallbackCards.length) {
-        fragment.appendChild(cardWrapper);
+        fallbackBlock.appendChild(cardList);
+        fragment.appendChild(fallbackBlock);
       }
     });
 

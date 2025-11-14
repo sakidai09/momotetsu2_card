@@ -51,7 +51,7 @@ main {
 }
 
 .search-section {
-  margin-top: -32px;
+  margin-top: 32px;
   padding: 0 0 24px;
 }
 
@@ -67,6 +67,9 @@ main {
   border-radius: var(--border-radius);
   box-shadow: var(--shadow);
   padding: 18px 20px;
+  width: 33%;
+  max-width: 420px;
+  min-width: 260px;
 }
 
 #searchInput {
@@ -101,111 +104,42 @@ main {
 
 .results-area.has-result {
   color: var(--text-color);
-}
-
-.station-card {
-  border-bottom: 1px solid #e5e7eb;
-  padding: 16px 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 }
 
-.station-card:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.period-block {
+  border-radius: 12px;
+  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.12);
+  padding: 16px 20px;
 }
 
-.station-name {
-  font-size: 1.2rem;
+.period-header {
+  margin: 0 0 8px;
+  font-size: 1.05rem;
   font-weight: 700;
-  margin: 0 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.card-list {
+.period-card-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.card-list li {
+.period-card-list li {
   background: rgba(255, 138, 61, 0.12);
   color: #b94a1c;
   border-radius: 9999px;
-  padding: 6px 14px;
+  padding: 6px 12px;
   font-size: 0.95rem;
   font-weight: 600;
-}
-
-.period-block {
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: inset 0 0 0 1px rgba(148, 163, 184, 0.1);
-  transition: transform var(--transition), box-shadow var(--transition);
-  margin-bottom: 12px;
-}
-
-.station-card .period-block:last-child {
-  margin-bottom: 0;
-}
-
-.period-toggle {
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 16px 20px;
-  font-size: 1.05rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  cursor: pointer;
-  color: var(--text-color);
-  text-align: left;
-}
-
-.period-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-.period-toggle::after {
-  content: '\25BC';
-  font-size: 0.85rem;
-  color: var(--muted-text);
-  transition: transform var(--transition);
-}
-
-.period-block.open .period-toggle::after {
-  transform: rotate(180deg);
-}
-
-.period-content {
-  display: none;
-  list-style: none;
-  margin: 0;
-  padding: 0 20px 16px;
-}
-
-.period-block.open .period-content {
-  display: block;
-}
-
-.period-content li {
-  margin-top: 10px;
-  padding: 6px 12px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.7);
-  font-weight: 600;
-  color: var(--text-color);
-}
-
-.period-content li:first-child {
-  margin-top: 12px;
 }
 
 .period_1_49 {
@@ -281,7 +215,13 @@ main {
   }
 
   .search-section {
-    margin-top: -20px;
+    margin-top: 24px;
+  }
+
+  .search-box {
+    width: 100%;
+    max-width: none;
+    min-width: 0;
   }
 
   .results-area {
