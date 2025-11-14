@@ -40,6 +40,19 @@ function parseCsvLine(line) {
   return values;
 }
 
+function getPeriodSortValue(periodName) {
+  if (!periodName) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const match = periodName.match(/\d+/);
+  if (!match) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return Number(match[0]);
+}
+
 async function main() {
   const csvRaw = await fs.readFile(inputPath, 'utf8');
   const lines = csvRaw
@@ -68,6 +81,7 @@ async function main() {
     }
 
     const stationName = columns[0]?.trim();
+    const periodLabel = columns[1]?.trim();
     const cardName = columns[2]?.trim();
 
     if (!stationName || !cardName) {
@@ -75,18 +89,52 @@ async function main() {
     }
 
     if (!stationMap.has(stationName)) {
-      stationMap.set(stationName, new Set());
+      stationMap.set(stationName, {
+        periods: new Map(),
+        cards: new Set(),
+      });
     }
 
-    stationMap.get(stationName).add(cardName);
+    const stationEntry = stationMap.get(stationName);
+
+    if (periodLabel) {
+      if (!stationEntry.periods.has(periodLabel)) {
+        stationEntry.periods.set(periodLabel, new Set());
+      }
+      stationEntry.periods.get(periodLabel).add(cardName);
+    } else {
+      stationEntry.cards.add(cardName);
+    }
   }
 
   const stations = Array.from(stationMap.entries())
     .sort((a, b) => a[0].localeCompare(b[0], 'ja'))
-    .map(([station, cardSet]) => ({
-      station,
-      cards: Array.from(cardSet).sort((a, b) => a.localeCompare(b, 'ja')),
-    }));
+    .map(([stationName, data]) => {
+      const station = { station: stationName };
+
+      if (data.periods.size) {
+        const sortedPeriods = Array.from(data.periods.entries())
+          .sort((a, b) => {
+            const valueDiff = getPeriodSortValue(a[0]) - getPeriodSortValue(b[0]);
+            if (valueDiff !== 0) {
+              return valueDiff;
+            }
+            return a[0].localeCompare(b[0], 'ja');
+          })
+          .reduce((acc, [periodName, cards]) => {
+            acc[periodName] = Array.from(cards).sort((a, b) => a.localeCompare(b, 'ja'));
+            return acc;
+          }, {});
+
+        station.periods = sortedPeriods;
+      }
+
+      if (data.cards.size) {
+        station.cards = Array.from(data.cards).sort((a, b) => a.localeCompare(b, 'ja'));
+      }
+
+      return station;
+    });
 
   await fs.mkdir(outputDir, { recursive: true });
   const jsonString = `${JSON.stringify({ stations }, null, 2)}\n`;
