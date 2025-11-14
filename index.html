@@ -8,7 +8,10 @@
   </head>
   <body>
     <header class="site-header">
-      <h1 class="site-title">桃鉄2 東西日本カード検索</h1>
+      <h1 class="site-title">
+        <span class="title-line">桃鉄2</span>
+        <span class="title-line">東西日本カード検索</span>
+      </h1>
       <p class="site-description">桃太郎電鉄2の駅とカード名の検索サイトです</p>
     </header>
 
@@ -18,10 +21,12 @@
         <div class="search-box">
           <input
             id="searchInput"
+            class="search-field"
             type="search"
             placeholder="秋吉台"
             autocomplete="off"
           />
+          <button id="clearButton" type="button" class="clear-button">クリア</button>
         </div>
       </section>
 

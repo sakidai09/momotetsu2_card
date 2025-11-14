@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const resultsArea = document.getElementById('results');
   const categoryContainer = document.getElementById('categoryButtons');
+  const clearButton = document.getElementById('clearButton');
 
   const CATEGORY_DEFINITIONS = [
     {
@@ -126,7 +127,7 @@ document.addEventListener('DOMContentLoaded', () => {
     },
   ];
 
-  let stationData = [];
+  let stationRecords = [];
   let cardNames = [];
 
   const normalise = (text) => {
@@ -184,6 +185,80 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'period-block period_default';
   };
 
+  const buildStationRecord = (station) => {
+    const stationName = (station?.station ?? '').toString().trim();
+    const periodsSource =
+      station && station.periods && typeof station.periods === 'object' && !Array.isArray(station.periods)
+        ? station.periods
+        : {};
+
+    const periodEntries = Object.entries(periodsSource);
+
+    const periodList = periodEntries.map(([periodName, cards]) => {
+      const safeCards = Array.isArray(cards) ? cards : [];
+      const uniqueCards = Array.from(
+        new Set(
+          safeCards
+            .filter((card) => typeof card === 'string' && card.trim().length > 0)
+            .map((card) => card.trim())
+        )
+      ).sort((a, b) => a.localeCompare(b, 'ja'));
+
+      return {
+        name: periodName,
+        cards: uniqueCards,
+        isNoPeriod: false,
+      };
+    });
+
+    const fallbackSource = Array.isArray(station?.cards) ? station.cards : [];
+    const fallbackCards = Array.from(
+      new Set(
+        fallbackSource
+          .filter((card) => typeof card === 'string' && card.trim().length > 0)
+          .map((card) => card.trim())
+      )
+    ).sort((a, b) => a.localeCompare(b, 'ja'));
+
+    const cardSet = new Set();
+    periodList.forEach((period) => {
+      period.cards.forEach((card) => {
+        cardSet.add(card);
+      });
+    });
+    fallbackCards.forEach((card) => {
+      cardSet.add(card);
+    });
+
+    const periods = sortPeriods([
+      ...periodList.map((period) => ({ ...period })),
+      ...(fallbackCards.length
+        ? [
+            {
+              name: '期間情報なし',
+              cards: fallbackCards,
+              isNoPeriod: true,
+            },
+          ]
+        : []),
+    ]);
+
+    const cardList = Array.from(cardSet).sort((a, b) => a.localeCompare(b, 'ja'));
+
+    return {
+      station: stationName,
+      periods,
+      cardList,
+      normalisedStation: normalise(stationName),
+      normalisedCards: cardList.map((card) => normalise(card)),
+    };
+  };
+
+  const resetResults = () => {
+    resultsArea.classList.remove('has-result');
+    resultsArea.textContent = 'ここに検索結果が表示されます';
+  };
+
   const renderResults = (stations) => {
     if (!stations.length) {
       resultsArea.classList.remove('has-result');
@@ -193,19 +268,43 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const fragment = document.createDocumentFragment();
+    const container = document.createElement('div');
+    container.className = 'stations-list';
 
-    stations.forEach((station) => {
-      const hasPeriodBlocks = Array.isArray(station.periods) && station.periods.length > 0;
+    stations.forEach((station, index) => {
+      const stationBlock = document.createElement('div');
+      stationBlock.className = 'station-block';
 
-      if (hasPeriodBlocks) {
+      const toggle = document.createElement('button');
+      toggle.type = 'button';
+      toggle.className = 'station-toggle';
+      toggle.setAttribute('aria-expanded', 'false');
+
+      const nameSpan = document.createElement('span');
+      nameSpan.textContent = station.station;
+
+      const iconSpan = document.createElement('span');
+      iconSpan.className = 'toggle-icon';
+      iconSpan.textContent = '+';
+
+      toggle.appendChild(nameSpan);
+      toggle.appendChild(iconSpan);
+
+      const content = document.createElement('div');
+      content.className = 'station-content';
+      const contentId = `station-content-${index}`;
+      content.id = contentId;
+      content.hidden = true;
+      toggle.setAttribute('aria-controls', contentId);
+
+      if (station.periods.length) {
         station.periods.forEach((period) => {
           const periodBlock = document.createElement('div');
           periodBlock.className = getPeriodClassName(period.name, period);
 
           const header = document.createElement('p');
           header.className = 'period-header';
-          header.textContent = `${station.station} (${period.name})`;
+          header.textContent = period.isNoPeriod ? '期間情報なし' : period.name;
           periodBlock.appendChild(header);
 
           const cardList = document.createElement('ul');
@@ -218,104 +317,50 @@ document.addEventListener('DOMContentLoaded', () => {
           });
 
           periodBlock.appendChild(cardList);
-          fragment.appendChild(periodBlock);
+          content.appendChild(periodBlock);
         });
-
-        return;
+      } else {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.className = 'station-empty';
+        emptyMessage.textContent = 'カード情報がありません';
+        content.appendChild(emptyMessage);
       }
 
-      const fallbackCards = Array.isArray(station.cards) ? station.cards : [];
+      toggle.addEventListener('click', () => {
+        const isOpen = stationBlock.classList.toggle('open');
+        content.hidden = !isOpen;
+        toggle.setAttribute('aria-expanded', String(isOpen));
+        iconSpan.textContent = isOpen ? '−' : '+';
+      });
 
-      if (fallbackCards.length) {
-        const fallbackBlock = document.createElement('div');
-        fallbackBlock.className = 'period-block period_default';
-
-        const header = document.createElement('p');
-        header.className = 'period-header';
-        header.textContent = station.station;
-        fallbackBlock.appendChild(header);
-
-        const cardList = document.createElement('ul');
-        cardList.className = 'period-card-list';
-
-        fallbackCards.forEach((card) => {
-          const item = document.createElement('li');
-          item.textContent = card;
-          cardList.appendChild(item);
-        });
-
-        fallbackBlock.appendChild(cardList);
-        fragment.appendChild(fallbackBlock);
-      }
+      stationBlock.appendChild(toggle);
+      stationBlock.appendChild(content);
+      container.appendChild(stationBlock);
     });
 
     resultsArea.innerHTML = '';
-    resultsArea.appendChild(fragment);
+    resultsArea.appendChild(container);
     resultsArea.classList.add('has-result');
   };
 
   const filterStations = (query) => {
-    if (!query) {
-      return [];
-    }
-
     const lowerQuery = normalise(query.trim());
 
-    return stationData
-      .map((station) => {
-        const stationMatches = normalise(station.station).includes(lowerQuery);
-        const periodEntries = station.periods ? Object.entries(station.periods) : [];
-
-        const filteredPeriods = periodEntries.reduce((acc, [periodName, cards]) => {
-          const cardList = Array.isArray(cards) ? cards : [];
-          const relevantCards = stationMatches
-            ? cardList
-            : cardList.filter((card) => normalise(card).includes(lowerQuery));
-
-          if (relevantCards.length) {
-            acc.push({ name: periodName, cards: relevantCards });
-          }
-
-          return acc;
-        }, []);
-
-        const fallbackCards = Array.isArray(station.cards) ? station.cards : [];
-        const relevantFallback = stationMatches
-          ? fallbackCards
-          : fallbackCards.filter((card) => normalise(card).includes(lowerQuery));
-
-        if (filteredPeriods.length && relevantFallback.length) {
-          filteredPeriods.push({
-            name: '期間情報なし',
-            cards: relevantFallback,
-            isNoPeriod: true,
-          });
-        }
-
-        if (filteredPeriods.length) {
-          return {
-            station: station.station,
-            periods: sortPeriods(filteredPeriods).map((period) => ({
-              ...period,
-              cards: period.cards.slice(),
-            })),
-          };
-        }
-
-        if (relevantFallback.length) {
-          return {
-            station: station.station,
-            cards: relevantFallback,
-          };
-        }
-
-        return null;
-      })
-      .filter((station) => station !== null);
+    return stationRecords.filter(
+      (station) =>
+        station.normalisedStation.includes(lowerQuery) ||
+        station.normalisedCards.some((card) => card.includes(lowerQuery))
+    );
   };
 
   const handleSearch = () => {
     const query = searchInput.value.trim();
+
+    if (!query) {
+      resetResults();
+      return;
+    }
+
     const filtered = filterStations(query);
     renderResults(filtered);
   };
@@ -323,10 +368,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const createCategoryButtons = (cards) => {
     categoryContainer.innerHTML = '';
     const fragment = document.createDocumentFragment();
-    const cardSet = new Set(cards);
+    const unionCards = new Set([
+      ...cards,
+      ...CATEGORY_DEFINITIONS.flatMap((category) => category.cards),
+    ]);
 
     CATEGORY_DEFINITIONS.forEach((category) => {
-      const availableCards = category.cards.filter((card) => cardSet.has(card));
+      const availableCards = category.cards.filter((card) => unionCards.has(card));
 
       if (!availableCards.length) {
         return;
@@ -369,23 +417,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const cards = new Set();
 
     stations.forEach((station) => {
-      if (station.periods) {
-        Object.values(station.periods).forEach((periodCards) => {
-          periodCards.forEach((card) => {
-            if (card && typeof card === 'string') {
-              cards.add(card);
-            }
-          });
-        });
-      }
-
-      if (Array.isArray(station.cards)) {
-        station.cards.forEach((card) => {
-          if (card && typeof card === 'string') {
-            cards.add(card);
-          }
-        });
-      }
+      station.cardList.forEach((card) => {
+        if (card && typeof card === 'string') {
+          cards.add(card);
+        }
+      });
     });
 
     return Array.from(cards).sort((a, b) => a.localeCompare(b, 'ja'));
@@ -399,10 +435,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = await response.json();
-      stationData = Array.isArray(data.stations) ? data.stations : [];
-      cardNames = extractCards(stationData);
+      const rawStations = Array.isArray(data.stations) ? data.stations : [];
+      stationRecords = rawStations.map((station) => buildStationRecord(station));
+      cardNames = extractCards(stationRecords);
 
       createCategoryButtons(cardNames);
+      resetResults();
     } catch (error) {
       console.error(error);
       resultsArea.textContent = 'データの読み込みに失敗しました。';
@@ -410,6 +448,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   searchInput.addEventListener('input', handleSearch);
+  searchInput.addEventListener('search', handleSearch);
+
+  if (clearButton) {
+    clearButton.addEventListener('click', () => {
+      if (searchInput.value) {
+        searchInput.value = '';
+      }
+
+      resetResults();
+      searchInput.focus();
+    });
+  }
 
   initialise();
 });
