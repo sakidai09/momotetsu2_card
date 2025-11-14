@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>桃鉄カード検索</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 class="site-title">桃鉄カード検索</h1>
+      <p class="site-description">架空の駅とカードで検索できるデモサイトです</p>
+    </header>
+
+    <main>
+      <section class="search-section">
+        <label for="searchInput" class="search-label">駅名またはカード名で検索</label>
+        <div class="search-box">
+          <input
+            id="searchInput"
+            type="search"
+            placeholder="プーケット"
+            autocomplete="off"
+          />
+        </div>
+      </section>
+
+      <section class="results-section">
+        <h2 class="section-title">検索結果</h2>
+        <div id="results" class="results-area">ここに検索結果が表示されます</div>
+      </section>
+
+      <section class="categories-section">
+        <h2 class="section-title">カード名一覧</h2>
+        <div id="categoryButtons" class="category-grid"></div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <small>&copy; 2024 桃鉄カード検索デモサイト</small>
+    </footer>
+
+    <script src="main.js" defer></script>
+  </body>
+</html>
