@@ -6,7 +6,56 @@ document.addEventListener('DOMContentLoaded', () => {
   let stationData = [];
   let cardNames = [];
 
-  const normalise = (text) => text.toLowerCase();
+  const normalise = (text) => (text ?? '').toLowerCase();
+
+  const getPeriodSortValue = (periodName) => {
+    if (!periodName) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    const match = periodName.match(/\d+/);
+    if (!match) {
+      return Number.MAX_SAFE_INTEGER;
+    }
+
+    return Number(match[0]);
+  };
+
+  const sortPeriods = (periods) =>
+    periods
+      .slice()
+      .sort((a, b) => {
+        const aValue = a.isNoPeriod ? Number.MAX_SAFE_INTEGER : getPeriodSortValue(a.name);
+        const bValue = b.isNoPeriod ? Number.MAX_SAFE_INTEGER : getPeriodSortValue(b.name);
+
+        if (aValue !== bValue) {
+          return aValue - bValue;
+        }
+
+        return a.name.localeCompare(b.name, 'ja');
+      });
+
+  const getPeriodClassName = (periodName, options = {}) => {
+    if (options.isNoPeriod) {
+      return 'period-block period_default';
+    }
+
+    const value = getPeriodSortValue(periodName);
+
+    if (value <= 49) {
+      return 'period-block period_1_49';
+    }
+
+    if (value >= 50 && value < 100) {
+      return 'period-block period_50';
+    }
+
+    if (value >= 100 && value !== Number.MAX_SAFE_INTEGER) {
+      return 'period-block period_100';
+    }
+
+    return 'period-block period_default';
+  };
 
   const renderResults = (stations) => {
     if (!stations.length) {
@@ -19,26 +68,77 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const fragment = document.createDocumentFragment();
 
-    stations.forEach((station) => {
+    stations.forEach((station, stationIndex) => {
       const cardWrapper = document.createElement('article');
       cardWrapper.className = 'station-card';
 
-      const stationTitle = document.createElement('h3');
-      stationTitle.className = 'station-name';
-      stationTitle.textContent = station.station;
-      cardWrapper.appendChild(stationTitle);
+      const hasPeriodBlocks = Array.isArray(station.periods) && station.periods.length > 0;
 
-      const cardList = document.createElement('ul');
-      cardList.className = 'card-list';
+      if (hasPeriodBlocks) {
+        station.periods.forEach((period, periodIndex) => {
+          const periodBlock = document.createElement('div');
+          periodBlock.className = getPeriodClassName(period.name, period);
 
-      station.cards.forEach((card) => {
-        const item = document.createElement('li');
-        item.textContent = card;
-        cardList.appendChild(item);
-      });
+          const toggleButton = document.createElement('button');
+          toggleButton.type = 'button';
+          toggleButton.className = 'period-toggle';
+          toggleButton.textContent = `${station.station} (${period.name})`;
 
-      cardWrapper.appendChild(cardList);
-      fragment.appendChild(cardWrapper);
+          const contentId = `period-${stationIndex}-${periodIndex}`;
+          toggleButton.setAttribute('aria-controls', contentId);
+
+          const contentList = document.createElement('ul');
+          contentList.className = 'period-content';
+          contentList.id = contentId;
+
+          period.cards.forEach((card) => {
+            const item = document.createElement('li');
+            item.textContent = card;
+            contentList.appendChild(item);
+          });
+
+          const shouldOpen = periodIndex === 0;
+          if (shouldOpen) {
+            periodBlock.classList.add('open');
+            toggleButton.setAttribute('aria-expanded', 'true');
+          } else {
+            toggleButton.setAttribute('aria-expanded', 'false');
+          }
+
+          toggleButton.addEventListener('click', () => {
+            const isOpen = periodBlock.classList.toggle('open');
+            toggleButton.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+          });
+
+          periodBlock.appendChild(toggleButton);
+          periodBlock.appendChild(contentList);
+          cardWrapper.appendChild(periodBlock);
+        });
+      }
+
+      const fallbackCards = Array.isArray(station.cards) ? station.cards : [];
+
+      if (!hasPeriodBlocks && fallbackCards.length) {
+        const stationTitle = document.createElement('h3');
+        stationTitle.className = 'station-name';
+        stationTitle.textContent = station.station;
+        cardWrapper.appendChild(stationTitle);
+
+        const cardList = document.createElement('ul');
+        cardList.className = 'card-list';
+
+        fallbackCards.forEach((card) => {
+          const item = document.createElement('li');
+          item.textContent = card;
+          cardList.appendChild(item);
+        });
+
+        cardWrapper.appendChild(cardList);
+      }
+
+      if (hasPeriodBlocks || fallbackCards.length) {
+        fragment.appendChild(cardWrapper);
+      }
     });
 
     resultsArea.innerHTML = '';
@@ -51,27 +151,53 @@ document.addEventListener('DOMContentLoaded', () => {
       return [];
     }
 
-    const lowerQuery = normalise(query);
+    const lowerQuery = normalise(query.trim());
 
     return stationData
       .map((station) => {
-        const matchingCards = station.cards.filter((card) =>
-          normalise(card).includes(lowerQuery)
-        );
-
         const stationMatches = normalise(station.station).includes(lowerQuery);
+        const periodEntries = station.periods ? Object.entries(station.periods) : [];
 
-        if (stationMatches) {
+        const filteredPeriods = periodEntries.reduce((acc, [periodName, cards]) => {
+          const cardList = Array.isArray(cards) ? cards : [];
+          const relevantCards = stationMatches
+            ? cardList
+            : cardList.filter((card) => normalise(card).includes(lowerQuery));
+
+          if (relevantCards.length) {
+            acc.push({ name: periodName, cards: relevantCards });
+          }
+
+          return acc;
+        }, []);
+
+        const fallbackCards = Array.isArray(station.cards) ? station.cards : [];
+        const relevantFallback = stationMatches
+          ? fallbackCards
+          : fallbackCards.filter((card) => normalise(card).includes(lowerQuery));
+
+        if (filteredPeriods.length && relevantFallback.length) {
+          filteredPeriods.push({
+            name: '期間情報なし',
+            cards: relevantFallback,
+            isNoPeriod: true,
+          });
+        }
+
+        if (filteredPeriods.length) {
           return {
             station: station.station,
-            cards: station.cards,
+            periods: sortPeriods(filteredPeriods).map((period) => ({
+              ...period,
+              cards: period.cards.slice(),
+            })),
           };
         }
 
-        if (matchingCards.length) {
+        if (relevantFallback.length) {
           return {
             station: station.station,
-            cards: matchingCards,
+            cards: relevantFallback,
           };
         }
 
@@ -112,11 +238,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const cards = new Set();
 
     stations.forEach((station) => {
-      station.cards.forEach((card) => {
-        if (card && typeof card === 'string') {
-          cards.add(card);
-        }
-      });
+      if (station.periods) {
+        Object.values(station.periods).forEach((periodCards) => {
+          periodCards.forEach((card) => {
+            if (card && typeof card === 'string') {
+              cards.add(card);
+            }
+          });
+        });
+      }
+
+      if (Array.isArray(station.cards)) {
+        station.cards.forEach((card) => {
+          if (card && typeof card === 'string') {
+            cards.add(card);
+          }
+        });
+      }
     });
 
     return Array.from(cards).sort((a, b) => a.localeCompare(b, 'ja'));
