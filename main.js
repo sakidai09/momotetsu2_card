@@ -3,6 +3,129 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsArea = document.getElementById('results');
   const categoryContainer = document.getElementById('categoryButtons');
 
+  const CATEGORY_DEFINITIONS = [
+    {
+      name: '急行系',
+      cards: [
+        '229マスカード',
+        'リニア周遊カード',
+        'はやぶさ周遊カード',
+        'のぞみ周遊カード',
+        '新幹線周遊カード',
+        '特急周遊カード',
+        'リニアカード',
+        '急行周遊カード',
+        'はやぶさカード',
+      ],
+    },
+    {
+      name: '移動系',
+      cards: [
+        '強奪飛び周遊カード',
+        '☆飛び周遊カード',
+        '物件飛び周遊カード',
+        'スペシャルズカード',
+        '目的地の近くカード',
+        'ヘリポートカード',
+        'スペシャルカード',
+        '強奪飛びカード',
+        '☆飛びカード',
+        '物件飛びカード',
+        '銀河鉄道カード',
+        '千載一遇カード',
+        'オール6カード',
+        'テレポートカード',
+        'ぶっとび周遊カード',
+        '里帰りカード',
+        'ぴったりカード',
+        'ブックマークカード',
+        '猪突猛進カード',
+      ],
+    },
+    {
+      name: 'お金系',
+      cards: [
+        '坊主丸儲けカード',
+        'ダイヤモンドカード',
+        'ベビキュラーカード',
+        '虎につばさカード',
+        'たいらのまさカード',
+        'とっかえっこカード',
+        '10億円カード',
+        'お殿様カード',
+        '親の総取りカード',
+        '持ち金ゼロカード',
+        'エンジェルカード',
+        '連帯保証人カード',
+      ],
+    },
+    {
+      name: '物件系',
+      cards: [
+        'シンデレラカード',
+        '強奪飛び周遊カード',
+        'プラチナカード',
+        'ゴールドカード',
+        '物件飛び周遊カード',
+        '強奪飛びカード',
+        '乗っ取り周遊カード',
+        'シルバーカード',
+        '物件飛びカード',
+        '乗っ取りカード',
+      ],
+    },
+    {
+      name: '便利系',
+      cards: [
+        'ダビングカード',
+        'パトカーズ',
+        'パトカード',
+        '期間延長カード',
+        '絶好調カード',
+        '君がすべて！カード',
+        '福袋カード',
+        'シュレッダーカード',
+        'あっちいけカード',
+        '九死に一生カード',
+        'ラッセル車カード',
+        '最下位カード',
+        'へっちゃらカード',
+        '引換券カード',
+      ],
+    },
+    {
+      name: '攻撃系',
+      cards: [
+        '坊主丸儲けカード',
+        '刀狩りカード',
+        '牛歩カード',
+        'キングに！カード',
+        '豪速球カード',
+        '冬眠カード',
+        '強奪飛び周遊カード',
+        '親の総取りカード',
+        'いただきますカード',
+        '強奪飛びカード',
+        '乗っ取り周遊カード',
+        '最果てカード',
+        '周遊禁止カード',
+        'サミットカード',
+        '場所がえカード',
+        'とっかえっこカード',
+        'ベビキュラーカード',
+        'とびちりカード',
+        '乗っ取りカード',
+        '孤軍奮闘カード',
+        'オナラカード',
+        '指定うんち！カード',
+        'スリの銀次カード',
+        '苦しゅうないカード',
+        'ふういんカード',
+        '目的地変更カード',
+      ],
+    },
+  ];
+
   let stationData = [];
   let cardNames = [];
 
@@ -200,20 +323,43 @@ document.addEventListener('DOMContentLoaded', () => {
   const createCategoryButtons = (cards) => {
     categoryContainer.innerHTML = '';
     const fragment = document.createDocumentFragment();
+    const cardSet = new Set(cards);
 
-    cards.forEach((card) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'category-button';
-      button.textContent = card;
+    CATEGORY_DEFINITIONS.forEach((category) => {
+      const availableCards = category.cards.filter((card) => cardSet.has(card));
 
-      button.addEventListener('click', () => {
-        searchInput.value = card;
-        handleSearch();
-        searchInput.focus();
+      if (!availableCards.length) {
+        return;
+      }
+
+      const group = document.createElement('div');
+      group.className = 'category-group';
+
+      const title = document.createElement('h3');
+      title.className = 'category-title';
+      title.textContent = `[${category.name}]`;
+      group.appendChild(title);
+
+      const list = document.createElement('div');
+      list.className = 'category-card-list';
+
+      availableCards.forEach((card) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'category-card';
+        button.textContent = card;
+
+        button.addEventListener('click', () => {
+          searchInput.value = card;
+          handleSearch();
+          searchInput.focus();
+        });
+
+        list.appendChild(button);
       });
 
-      fragment.appendChild(button);
+      group.appendChild(list);
+      fragment.appendChild(group);
     });
 
     categoryContainer.appendChild(fragment);
