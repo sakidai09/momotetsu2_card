@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const searchInput = document.getElementById('searchInput');
   const resultsArea = document.getElementById('results');
+  const resultsSection = document.querySelector('.results-section');
   const categoryContainer = document.getElementById('categoryButtons');
   const clearButton = document.getElementById('clearButton');
 
@@ -294,6 +295,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const resetResults = () => {
     resultsArea.classList.remove('has-result');
     resultsArea.textContent = 'ここに検索結果が表示されます';
+    if (resultsSection) {
+      resultsSection.classList.add('is-hidden');
+    }
   };
 
   const renderResults = (stations) => {
@@ -302,6 +306,9 @@ document.addEventListener('DOMContentLoaded', () => {
       resultsArea.textContent = searchInput.value.trim()
         ? '該当するカードや駅が見つかりません'
         : 'ここに検索結果が表示されます';
+      if (resultsSection && searchInput.value.trim()) {
+        resultsSection.classList.remove('is-hidden');
+      }
       return;
     }
 
@@ -378,6 +385,9 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsArea.innerHTML = '';
     resultsArea.appendChild(container);
     resultsArea.classList.add('has-result');
+    if (resultsSection) {
+      resultsSection.classList.remove('is-hidden');
+    }
   };
 
   const filterStations = (query) => {

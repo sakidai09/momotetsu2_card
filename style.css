@@ -137,6 +137,10 @@ input[type='search'] {
   font-weight: 700;
 }
 
+.results-section.is-hidden {
+  display: none;
+}
+
 .results-area {
   background: var(--card-bg);
   border-radius: var(--border-radius);
@@ -383,6 +387,10 @@ input[type='search'] {
 
   .site-description {
     font-size: 0.88rem;
+  }
+
+  .site-title {
+    font-size: clamp(1rem, 5vw, 1.2rem);
   }
 
   .section-title {
