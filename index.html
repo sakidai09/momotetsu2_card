@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>桃鉄2 東西日本カード検索</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <h1 class="site-title">
+        <span class="title-line">桃鉄2</span>
+        <span class="title-line">東西日本カード検索</span>
+      </h1>
+      <p class="site-description">桃太郎電鉄2の駅とカード名の検索サイトです</p>
+    </header>
+
+    <main>
+      <section class="search-section">
+        <label for="searchInput" class="search-label">駅名またはカード名で検索(カード名は下の一覧を選択してもOK)</label>
+        <div class="search-box">
+          <input
+            id="searchInput"
+            class="search-field"
+            type="search"
+            placeholder="秋吉台"
+            autocomplete="off"
+          />
+          <button id="clearButton" type="button" class="clear-button">クリア</button>
+        </div>
+      </section>
+
+      <section class="categories-section">
+        <h2 class="section-title">カード名一覧</h2>
+        <div id="categoryButtons" class="category-grid"></div>
+      </section>
+
+      <section class="results-section is-hidden">
+        <h2 class="section-title">検索結果</h2>
+        <div id="results" class="results-area">ここに検索結果が表示されます</div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <small>&copy; 2024 桃鉄カード検索デモサイト</small>
+    </footer>
+
+    <script src="main.js" defer></script>
+  </body>
+</html>
